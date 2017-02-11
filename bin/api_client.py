@@ -34,11 +34,11 @@ class ApiClient:
             'user_session[password]': password
         }
 
-        response = requests.post(request_url, headers=request_headers, data=request_payload)
+        response = requests.post(url=request_url, headers=request_headers, data=request_payload)
 
         if response.status_code == 200:
             logging.info('Authentication succeeded on account[%s]', username)
-            self.__persist_cookie(response.cookies)
+            self.__persist_cookie(cookies=response.cookies)
         elif response.status_code == 400:
             logging.error('Authentication failed on account[%s]', username)
             logging.error(response.json()['message'])
@@ -65,14 +65,14 @@ class ApiClient:
             'pagination_token': pagination_token
         }
 
-        response = requests.get(request_url, headers=request_headers, params=query_parameters, cookies=cookies)
+        response = requests.get(url=request_url, headers=request_headers, params=query_parameters, cookies=cookies)
         response_json = response.json()
 
         if response.status_code == 200:
             user_list = []
             for user in response_json['users']:
                 user_list.append(user['user']['token'])
-            self.__update_pagination(response_json['next_page'], response_json['pagination_token'])
+            self.__update_pagination(current_page=response_json['next_page'], token=response_json['pagination_token'])
             return user_list
         elif response.status_code == 400:
             if response_json['code'] == 'login_required':
@@ -81,8 +81,8 @@ class ApiClient:
                 except Exception as err:
                     logging.error(err)
                 else:
-                    return self.get_user_list(
-                        n_per_page, use_advanced, page, pagination_token, self.api_account.cookies)
+                    return self.get_user_list(n_per_page=n_per_page, use_advanced=use_advanced, page=page,
+                                              pagination_token=pagination_token, cookies=self.api_account.cookies)
             else:
                 logging.error('Unknown error - status: %s\tmessage: %s', response.status_code, response_json)
         else:
@@ -106,7 +106,7 @@ class ApiClient:
             'real_time_info': real_time_info
         }
 
-        response = requests.get(request_url, headers=request_headers, params=query_parameters, cookies=cookies)
+        response = requests.get(url=request_url, headers=request_headers, params=query_parameters, cookies=cookies)
         response_json = response.json()
 
         if response.status_code == 200:
@@ -118,8 +118,9 @@ class ApiClient:
                 except Exception as err:
                     logging.error(err)
                 else:
-                    return self.get_user(
-                        user_token, show_simple_options, show_natural, real_time_info, self.api_account.cookies)
+                    return self.get_user(user_token=user_token, show_simple_options=show_simple_options,
+                                         show_natural=show_natural, real_time_info=real_time_info,
+                                         cookies=self.api_account.cookies)
             else:
                 logging.error('Unknown error - status: %s\tmessage: %s', response.status_code, response_json)
         else:

@@ -15,7 +15,7 @@ class UserProfile:
                  graduate_school=None, income=None, company=None, occupation=None, job_title=None, marital_status=None,
                  ethnicity=None, body_type=None, birth_country=None, has_children=None, will_relocate=None,
                  immigration=None, first_arrive=None, religion=None, smoking=None, drinking=None, interest=None,
-                 image_url_original=None, about_me=None, open_answers=[]):
+                 image_url_original=None, open_answers=[]):
         self.user_id = user_id,
         self.gender = gender,
         self.birthday_epoch = birthday_epoch,
@@ -23,7 +23,6 @@ class UserProfile:
         self.chinese_zodiac = chinese_zodiac,
         self.height = height,
         self.location = location,
-        self.birthday_epoch = birthday_epoch,
         self.city = city,
         self.state = state,
         self.country = country,
@@ -48,7 +47,6 @@ class UserProfile:
         self.drinking = drinking,
         self.interest = interest,
         self.image_url_original = image_url_original,
-        self.about_me = about_me,
         self.open_answers = open_answers
 
 
