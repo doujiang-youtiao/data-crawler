@@ -15,8 +15,8 @@ class ApiClient:
         self.api_account = account
 
     def authenticate(self):
-        username = self.api_account['username']
-        password = self.api_account['password']
+        username = self.api_account.username
+        password = self.api_account.password
 
         request_url = ApiClient.urls['base'] + ApiClient.urls['auth']
         request_headers = {
@@ -82,7 +82,7 @@ class ApiClient:
                     logging.error(err)
                 else:
                     return self.get_user_list(
-                        n_per_page, use_advanced, page, pagination_token, self.api_account['cookies'])
+                        n_per_page, use_advanced, page, pagination_token, self.api_account.cookies)
             else:
                 logging.error('Unknown error - status: %s\tmessage: %s', response.status_code, response_json)
         else:
@@ -119,25 +119,25 @@ class ApiClient:
                     logging.error(err)
                 else:
                     return self.get_user(
-                        user_token, show_simple_options, show_natural, real_time_info, self.api_account['cookies'])
+                        user_token, show_simple_options, show_natural, real_time_info, self.api_account.cookies)
             else:
                 logging.error('Unknown error - status: %s\tmessage: %s', response.status_code, response_json)
         else:
             logging.error('Unknown error - status: %s\tmessage: %s', response.status_code, response_json)
 
     def __update_pagination(self, current_page, token):
-        self.api_account['pagination']['current_page'] = current_page
-        self.api_account['pagination']['token'] = token
+        self.api_account.pagination['current_page'] = current_page
+        self.api_account.pagination['token'] = token
 
     def __persist_cookie(self, cookies):
         dict_cookies = cookies.get_dict()
         if dict_cookies.__contains__('AWSALB') and dict_cookies.__contains__('user_credentials'):
-            self.api_account['cookies']['AWSALB'] = dict_cookies.get('AWSALB')
-            self.api_account['cookies']['user_credentials'] = dict_cookies.get('user_credentials')
-            logging.info('User[%s]\'s cookies have been refreshed.', self.api_account['username'])
+            self.api_account.cookies['AWSALB'] = dict_cookies.get('AWSALB')
+            self.api_account.cookies['user_credentials'] = dict_cookies.get('user_credentials')
+            logging.info('User[%s]\'s cookies have been refreshed.', self.api_account.username)
         else:
             logging.warning('Response cookies do not have sufficient authentication attributes.')
 
     def __invalidate_account(self):
-        self.api_account['valid'] = False
-        raise Exception('Invalid api account[{}]'.format(self.api_account['username']))
+        self.api_account.valid = False
+        raise Exception('Invalid api account[{}]'.format(self.api_account.username))
