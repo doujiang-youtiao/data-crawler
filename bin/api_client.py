@@ -73,7 +73,7 @@ class ApiClient:
             for user in response_json['users']:
                 user_list.append(user['user']['token'])
             self.__update_pagination(current_page=response_json['next_page'], token=response_json['pagination_token'])
-            return user_list
+            return user_list, response_json               #added response_json
         elif response.status_code == 400:
             if response_json['code'] == 'login_required':
                 try:
@@ -110,7 +110,19 @@ class ApiClient:
         response_json = response.json()
 
         if response.status_code == 200:
-            return
+#========================================added code==========================================#
+            token = []
+            birthday = []
+            country = []
+            user_profile = [token, birthday, country]
+            target_profile = []
+            open_answer = []
+            for user in response_json["users"]:
+                user_profile[0].append(user["user"]["token"])
+                user_profile[1].append(user["user"]["birthday"])
+                user_profile[2].append(user["user"]["country"])
+            return {"user_profile": user_profile, "target_profile": target_profile, "open_answer": open_answer}
+# ========================================added code==========================================#
         elif response.status_code == 400:
             if response_json['code'] == 'login_required':
                 try:
