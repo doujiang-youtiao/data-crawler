@@ -78,7 +78,8 @@ class TargetProfile:
 
 class OpenAnswer:
 
-    def __init__(self,user_id,question_id=None,answer_text=None):
+    def __init__(self,user_id,question_id,answer_text=None):
         self.user_id=user_id,
         self.question_id=question_id,
         self.answer_text=answer_text
+
