@@ -1,5 +1,8 @@
 import requests
 import logging
+from domain import UserProfile
+from domain import TargetProfile
+from domain import OpenAnswer
 
 
 class ApiClient:
@@ -73,7 +76,7 @@ class ApiClient:
             for user in response_json['users']:
                 user_list.append(user['user']['token'])
             self.__update_pagination(current_page=response_json['next_page'], token=response_json['pagination_token'])
-            return user_list, response_json               #added response_json
+            return user_list
         elif response.status_code == 400:
             if response_json['code'] == 'login_required':
                 try:
@@ -110,19 +113,107 @@ class ApiClient:
         response_json = response.json()
 
         if response.status_code == 200:
-#========================================added code==========================================#
-            token = []
-            birthday = []
-            country = []
-            user_profile = [token, birthday, country]
-            target_profile = []
-            open_answer = []
-            for user in response_json["users"]:
-                user_profile[0].append(user["user"]["token"])
-                user_profile[1].append(user["user"]["birthday"])
-                user_profile[2].append(user["user"]["country"])
-            return {"user_profile": user_profile, "target_profile": target_profile, "open_answer": open_answer}
-# ========================================added code==========================================#
+            # ========================================added code below==========================================#
+            user = response_json["user"]
+
+            user_profile = UserProfile(
+                user_id = user["token"],
+                gender = user["sex"],
+                birthday_epoch = user["birthday"],
+                # zodiac = user["profile_details"]["zodiac"]["value"],
+                zodiac = user["profile_details"]["zodiac"],
+                # chinese_zodiac = user["profile_details"]["cn_zodiac"]["value"],
+                chinese_zodiac = user["profile_details"]["cn_zodiac"],
+                # height = user["profile_details"]["height"]["value"], # may not have text. value only??
+                location = user["location_short_description"],
+                city = user["city"],
+                state = user["state"],
+                country = user["country"],
+                # language = user["profile_details"]["languages"]["values"]["value"], #May contain one or more value, considering changing this to a list?
+                language = user["profile_details"]["languages"],
+                # education = user["profile_details"]["education"]["value"],
+                education = user["profile_details"]["education"],
+                # college = user["profile_details"]["college"]["value"],
+                college = user["profile_details"]["college"],
+                # graduate_school = user["profile_details"]["grad_school"]["value"],
+                 graduate_school = user["profile_details"]["grad_school"],
+                # income = user["profile_details"]["income"]["value"],
+                income = user["profile_details"]["income"],
+                # company = user["profile_details"]["company"]["value"], # May not have a value or text
+                company = user["profile_details"]["company"],
+                # occupation = user["profile_details"]["occupation"]["value"],
+                occupation = user["profile_details"]["occupation"],
+                # job_title = user["profile_details"]["job_title"]["label"], # May not have a value or text
+                job_title = user["profile_details"]["job_title"],
+                # marital_status = user["profile_details"]["marital_status"]["value"],
+                marital_status = user["profile_details"]["marital_status"],
+                # ethnicity = user["profile_details"]["ethnicity"]["value"],
+                ethnicity = user["profile_details"]["ethnicity"],
+                # body_type = user["profile_details"]["body_type"]["value"],
+                body_type = user["profile_details"]["body_type"],
+                # birth_country = user["profile_details"]["birth_country"]["value"],
+                birth_country = user["profile_details"]["birth_country"],
+                # has_children = user["profile_details"]["has_children"]["value"],
+                has_children = user["profile_details"]["has_children"],
+                # will_relocate = user["profile_details"]["willing_to_relocate"]["value"],
+                will_relocate = user["profile_details"]["willing_to_relocate"],
+                # immigration = user["profile_details"]["immigration"]["value"],
+                immigration = user["profile_details"]["immigration"],
+                # first_arrive = user["profile_details"]["first_arrive"]["value"],
+                first_arrive = user["profile_details"]["first_arrive"],
+                # religion = user["profile_details"]["religion"]["value"],
+                religion = user["profile_details"]["religion"],
+                # smoking = user["profile_details"]["smoking"]["value"],
+                smoking = user["profile_details"]["smoking"],
+                #drinking = user["profile_details"]["drinking"]["value"],
+                drinking = user["profile_details"]["drinking"],
+                # interest = user["profile_details"]["interests"]["values"],#May contain one or more value, considering changing this to a list?
+                interest = user["profile_details"]["interests"],
+                image_url_original = user["user_photos"][0]["user_photo"]["original_image_url"]
+                # open_answers = user["open_answers"],
+            )
+
+            target_profile = TargetProfile(
+                user_id = user["token"],
+                gender = user["seeking"]
+                # max_age = user["looking_for_details"]["age"]["top"],
+                # min_age = user["looking_for_details"]["age"]["bottom"],
+                # height = user["looking_for_details"]["height"]["text"],     # may contain max and min req. as well like age.
+                # location = user["looking_for_details"]["location"]["importance"]["value"],
+                # language = user["looking_for_details"]["location"]["importance"]["value"],
+                # education = user["looking_for_details"]["education"], # may not contain any value
+                # income = user["looking_for_details"]["income"]["importance"]["value"],
+                # occupation = user["looking_for_details"]["occupation"]["importance"]["value"],
+                # marital_status = user["looking_for_details"]["marital_status"]["values"][0]["text"],
+                # ethnicity = user["looking_for_details"]["ethnicity"]["values"][0]["text"],
+                # body_type = user["looking_for_details"]["body_type"],    # May contain one or more value, considering changing this to a list?
+                # birth_country = user["looking_for_details"]["birth_country"]["importance"]["value"],
+                # has_children = user["looking_for_details"]["has_children"], # # May not have a value or text
+                # immigration = user["looking_for_details"]["immigration"]["importance"]["value"],
+                # religion = user["looking_for_details"]["religion"]["importance"]["value"],
+                # smoking = user["looking_for_details"]["smoking"]["values"][0]["value"],
+                # drinking = user["looking_for_details"]["drinking"]["values"][0]["value"],
+            )
+
+            num_open_answer = len(user["open_answers"])
+            id_list = []
+            question_list = []
+            answer_list = []
+            if num_open_answer != 0:
+                for idx in range(num_open_answer):
+                    id_list.append(user["open_answers"][idx]["open_answer"]["open_question"]["id"])
+                    question_list.append(user["open_answers"][idx]["open_answer"]["open_question"]["description"])
+                    answer_list.append(user["open_answers"][idx]["open_answer"]["answer"])
+            # else:
+
+            open_answers = OpenAnswer(
+                user_id = user["token"],
+                question_id = id_list,
+                answer_text = answer_list,
+                # question_text = question_list            # consider adding "open questions" into the class def?
+            )
+            return {"user_profile": user_profile, "target_profile": target_profile, "open_answers": open_answers}
+            # ========================================added code below==========================================#
         elif response.status_code == 400:
             if response_json['code'] == 'login_required':
                 try:
@@ -135,8 +226,19 @@ class ApiClient:
                                          cookies=self.api_account.cookies)
             else:
                 logging.error('Unknown error - status: %s\tmessage: %s', response.status_code, response_json)
+        # ========================================added code above==========================================#
+        elif response.status_code == 404:
+            try:
+                self.authenticate()
+            except Exception as err:
+                logging.error(err)
+            else:
+                return self.get_user(user_token=user_token, show_simple_options=show_simple_options,
+                                     show_natural=show_natural, real_time_info=real_time_info,
+                                     cookies=self.api_account.cookies)
         else:
             logging.error('Unknown error - status: %s\tmessage: %s', response.status_code, response_json)
+        # ========================================added code==========================================#
 
     def __update_pagination(self, current_page, token):
         self.api_account.pagination['current_page'] = current_page

@@ -1,22 +1,24 @@
 from api_client import ApiClient
 from domain import ApiAccount
-import json   #added by c.wang
+#import json
 
 account = ApiAccount('greenbean@mailinator.com', 'greenbean')
 client = ApiClient(account)
 
-user_id  = client.get_user_list()[0]
-user_json  = client.get_user_list()[1]
+user_id = client.get_user_list()
 
-print(user_id)
-#print("Length of user_id = ", len(user_id))
+# testing out the code with the 1st user token...
+user_profile = client.get_user(user_id[0])["user_profile"]
+target_profile = client.get_user(user_id[0])["target_profile"]
+open_answer = client.get_user(user_id[0])["open_answers"]
 
-with open('response_json.json', 'w') as outfile:
-    json.dump(user_json, outfile)
+image_url = user_profile.image_url_original
+look_for_gender = target_profile.gender
+OA_question_id = open_answer.question_id
+OA_answer_text = open_answer.answer_text
 
-print(client.get_user(""))
-# LenOfSeek = len(client.get_user("")["user_profile"][0])
-# print("Length of element = ", LenOfSeek)
+print("User ID list : %s" % user_id)
 
-# Q1: Keys in response_json does not match variables defined in classes "UserProfile" and "TargetProfile"...
-# Q2:get_user_list()turned out to have 20 user tokens, but get_user() returned only 12... am i missing something here?? please advise...
+print("URL of the the original image: %s ." % image_url, "\n""Gender the user looking for: %s." % look_for_gender)
+print("Open answer question IDs:  %s ." % OA_question_id, "\n""Open answers : %s" % OA_answer_text)
+
