@@ -214,19 +214,7 @@ class ApiClient:
             )
             return {"user_profile": user_profile, "target_profile": target_profile, "open_answers": open_answers}
             # ========================================added code below==========================================#
-        elif response.status_code == 400:
-            if response_json['code'] == 'login_required':
-                try:
-                    self.authenticate()
-                except Exception as err:
-                    logging.error(err)
-                else:
-                    return self.get_user(user_token=user_token, show_simple_options=show_simple_options,
-                                         show_natural=show_natural, real_time_info=real_time_info,
-                                         cookies=self.api_account.cookies)
-            else:
-                logging.error('Unknown error - status: %s\tmessage: %s', response.status_code, response_json)
-        # ========================================added code above==========================================#
+
         elif response.status_code == 404:
             try:
                 self.authenticate()
@@ -238,8 +226,7 @@ class ApiClient:
                                      cookies=self.api_account.cookies)
         else:
             logging.error('Unknown error - status: %s\tmessage: %s', response.status_code, response_json)
-        # ========================================added code==========================================#
-
+        # ========================================added code above==========================================#
     def __update_pagination(self, current_page, token):
         self.api_account.pagination['current_page'] = current_page
         self.api_account.pagination['token'] = token
