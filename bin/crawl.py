@@ -7,6 +7,24 @@ client = ApiClient(account)
 
 user_id = client.get_user_list()
 
+user_profile_list=[]
+target_profile_list=[]
+open_answer_list=[]
+for i in range(len(user_id)):
+    user_profile_list.append(client.get_user(user_id[i])["user_profile"])
+    target_profile_list.append(client.get_user(user_id[i])["target_profile"])
+    open_answer_list.append(client.get_user(user_id[i])["open_answers"])
+
+print ('User profile list is:', user_profile_list)
+print ('Target profile list is:', target_profile_list)
+print ('Open Answer List is:', open_answer_list)
+
+
+first_user=user_profile_list[1].user_id
+print('first user id', first_user)
+
+
+
 # testing out the code with the 1st user token...
 user_profile = client.get_user(user_id[0])["user_profile"]
 target_profile = client.get_user(user_id[0])["target_profile"]
