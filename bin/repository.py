@@ -1,12 +1,13 @@
+import settings
 import mysql.connector as ds
 
 
 class DataSource:
 
-    host = ''
-    username = ''
-    password = ''
-    database = ''
+    host = settings.get('host')
+    username = settings.get('username')
+    password = settings.get('password')
+    database = settings.get('database')
 
     def open_connection(self):
         return ds.connect(host=self.host, user=self.username, passwd=self.password, db=self.database)
