@@ -75,3 +75,17 @@ CREATE TABLE target_profile
   CONSTRAINT pk_target_profile PRIMARY KEY (user_id),
   CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES user_profile(id)
 );
+
+CREATE TABLE interest
+(
+  id                  INT             NOT NULL ,
+  description         VARCHAR(200) ,
+  CONSTRAINT pk_interest PRIMARY KEY (id)
+);
+
+CREATE TABLE language
+(
+  id                  INT             NOT NULL ,
+  description         VARCHAR(100) ,
+  CONSTRAINT pk_language PRIMARY KEY (id)
+);
