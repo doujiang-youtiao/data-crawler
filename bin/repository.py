@@ -1,13 +1,16 @@
-import settings
-import mysql.connector as ds
+from configparser import ConfigParser
+import pymysql as ds
+# import mysql.connector as ds
 
+config = ConfigParser()
+config.read('config.cfg')
 
 class DataSource:
 
-    host = settings.get('host')
-    username = settings.get('username')
-    password = settings.get('password')
-    database = settings.get('database')
+    host = config.get('datasource', 'host')
+    username = config.get('datasource', 'username')
+    password = config.get('datasource', 'password')
+    database = config.get('datasource', 'database')
 
     def open_connection(self):
         return ds.connect(host=self.host, user=self.username, passwd=self.password, db=self.database)
@@ -103,3 +106,50 @@ class TargetProfileRepository:
         connection.commit()
         cursor.close()
         connection.close()
+
+
+class OpenAnswerRepository:
+
+    datasource = DataSource()
+
+    def answer_exists(self, open_answer):
+        connection = self.datasource.open_connection()
+        cursor = connection.cursor()
+        prepared_sql = """SELECT count(*) FROM open_answer WHERE user_id = {user_id} AND question_id = {question_id};"""
+        sql_command = prepared_sql.format(open_answer.user_id, open_answer.question_id)
+        cursor.execute(sql_command)
+        result = cursor.fetchone()
+        return result[0] > 0
+
+    def insert_open_answer(self, open_answer):
+        connection = self.datasource.open_connection()
+        cursor = connection.cursor()
+        prepared_sql = """INSERT INTO open_answer (
+                       user_id, question_id, answer_text)
+                       VALUES (
+                       {user_id}, {question_id}, {answer_text});"""
+        sql_command = prepared_sql.format(user_id=open_answer.user_id, question_id=open_answer.question_id,
+                                          answer_text=open_answer.answer_text)
+        cursor.execute(sql_command)
+        connection.commit()
+        cursor.close()
+        connection.close()
+
+    # List structure: [(chen, 1, answer1),(chen, 2, answer2),(chao, 1, answer1)]
+    def bulk_insert_open_answer(self, answer_list):
+        if list:
+            connection = self.datasource.open_connection()
+            cursor = connection.cursor()
+            sql_command = """INSERT INTO open_answer (
+                           user_id, question_id, answer_text)
+                           VALUES (%s, %s, %s);"""
+            cursor.executemany(sql_command, answer_list)
+            connection.commit()
+            cursor.close()
+            connection.close()
+
+
+list = [('chen', 1, 'answer1'),('chen', 2, 'answer2'),('chao', 1, 'answer1')]
+openanswer = OpenAnswerRepository()
+# openanswer.answer_exists()
+openanswer.bulk_insert_open_answer(list)
