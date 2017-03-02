@@ -10,10 +10,10 @@ user_id = client.get_user_list()
 user_profile_list=[]
 target_profile_list=[]
 open_answer_list=[]
-for i in range(len(user_id)):
-    user_profile_list.append(client.get_user(user_id[i])["user_profile"])
-    target_profile_list.append(client.get_user(user_id[i])["target_profile"])
-    open_answer_list.append(client.get_user(user_id[i])["open_answers"])
+for idx in range(len(user_id)):
+    user_profile_list.append(client.get_user(user_id[idx])["user_profile"])
+    target_profile_list.append(client.get_user(user_id[idx])["target_profile"])
+    open_answer_list.append(client.get_user(user_id[idx])["open_answers"])
 
 print ('User profile list is:', user_profile_list)
 print ('Target profile list is:', target_profile_list)
