@@ -118,6 +118,9 @@ class ApiClient:
             # ========================================added code below==========================================#
             user = response_json["user"]
 
+            language_id_list = self.__savelist(user.get("profile details"), "languages")
+            interest_id_list = self.__savelist(user.get("profile details"), "interests")
+
             user_profile = UserProfile(
                 user_id = user["token"],
                 gender = user["sex"],
@@ -132,7 +135,8 @@ class ApiClient:
                 state = user["state"],
                 country = user["country"],
                 # language = user["profile_details"]["languages"]["values"]["value"], #May contain one or more value, considering changing this to a list?
-                language = user["profile_details"]["languages"],
+                #language = user["profile_details"]["languages"],
+                language=language_id_list,
                 # education = user["profile_details"]["education"]["value"],
                 education = user["profile_details"]["education"],
                 # college = user["profile_details"]["college"]["value"],
@@ -170,7 +174,8 @@ class ApiClient:
                 #drinking = user["profile_details"]["drinking"]["value"],
                 drinking = user["profile_details"]["drinking"],
                 # interest = user["profile_details"]["interests"]["values"],#May contain one or more value, considering changing this to a list?
-                interest = user["profile_details"]["interests"],
+                #interest = user["profile_details"]["interests"],
+                interest=interest_id_list,
                 image_url_original = user["user_photos"][0]["user_photo"]["original_image_url"]
                 # open_answers = user["open_answers"],
             )
@@ -245,3 +250,10 @@ class ApiClient:
     def __invalidate_account(self):
         self.api_account.valid = False
         raise Exception('Invalid api account[{}]'.format(self.api_account.username))
+
+    def __savelist(self, address, parameter):
+        id_list = []
+        if address.get(parameter).get('values'):
+            for item in address.get(parameter).get('values'):
+                id_list.append(item.get('value'))
+        return id_list
