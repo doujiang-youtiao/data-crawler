@@ -122,81 +122,85 @@ class ApiClient:
 
             user = response_json.get("user")
 
+            def multi_option(input_values):
+                multi_answer = []
+                if input_values:
+                    for idx in range(len(input_values)):
+                        multi_answer.append(input_values[idx].get("text"))
+                return multi_answer
+
             user_profile = UserProfile(
                 user_id=user.get("token"),
-                gender=user.get("sex", None),
+                gender=user.get("sex"),
                 birthday_epoch=user.get("birthday"),
-                zodiac=user.get("profile_details").get("zodiac").get("text", None),
-                chinese_zodiac=user.get("profile_details").get("cn_zodiac").get("text", None),
-                height=user.get("profile_details").get("height").get("text", None),
-                location=user.get("location_short_description", None),
-                city=user.get("city", None),
-                state=user.get("state", None),
-                country=user.get("country", None),
-                # language=[],
-                education=user.get("profile_details").get("education").get("text", None),
-                college=user.get("profile_details").get("college").get("text", None),
-                graduate_school=user.get("profile_details").get("grad_school").get("text", None),
-                income=user.get("profile_details").get("income").get("text", None),
-                company=user.get("profile_details").get("company").get("text", None),
-                occupation=user.get("profile_details").get("occupation").get("text", None),
-                job_title=user.get("profile_details").get("job_title").get("text", None),
-                marital_status=user.get("profile_details").get("marital_status").get("text", None),
-                ethnicity=user.get("profile_details").get("ethnicity").get("text", None),
-                body_type=user.get("profile_details").get("body_type").get("text", None),
-                birth_country=user.get("profile_details").get("birth_country").get("text", None),
-                has_children=user.get("profile_details").get("has_children").get("text", None),
-                will_relocate=user.get("profile_details").get("willing_to_relocate").get("text", None),
-                immigration=user.get("profile_details").get("immigration").get("text", None),
-                first_arrive=user.get("profile_details").get("first_arrive").get("text", None),
-                religion=user.get("profile_details").get("religion").get("text", None),
-                smoking=user.get("profile_details").get("smoking").get("text", None),
-                drinking=user.get("profile_details").get("drinking").get("text", None),
-                # interest=[],
-                image_url_original=user.get("user_photos")[0].get("user_photo").get("original_image_url", None),
+                zodiac=user.get("profile_details").get("zodiac").get("text"),
+                chinese_zodiac=user.get("profile_details").get("cn_zodiac").get("text"),
+                height=user.get("profile_details").get("height").get("text"),
+                location=user.get("location_short_description"),
+                city=user.get("city"),
+                state=user.get("state"),
+                country=user.get("country"),
+                language=multi_option(user.get("profile_details").get("languages").get("values")),
+                education=user.get("profile_details").get("education").get("text"),
+                college=user.get("profile_details").get("college").get("text"),
+                graduate_school=user.get("profile_details").get("grad_school").get("text"),
+                income=user.get("profile_details").get("income").get("text"),
+                company=user.get("profile_details").get("company").get("text"),
+                occupation=user.get("profile_details").get("occupation").get("text"),
+                job_title=user.get("profile_details").get("job_title").get("text"),
+                marital_status=user.get("profile_details").get("marital_status").get("text"),
+                ethnicity=user.get("profile_details").get("ethnicity").get("text"),
+                body_type=user.get("profile_details").get("body_type").get("text"),
+                birth_country=user.get("profile_details").get("birth_country").get("text"),
+                has_children=user.get("profile_details").get("has_children").get("text"),
+                will_relocate=user.get("profile_details").get("willing_to_relocate").get("text"),
+                immigration=user.get("profile_details").get("immigration").get("text"),
+                first_arrive=user.get("profile_details").get("first_arrive").get("text"),
+                religion=user.get("profile_details").get("religion").get("text"),
+                smoking=user.get("profile_details").get("smoking").get("text"),
+                drinking=user.get("profile_details").get("drinking").get("text"),
+                interest=multi_option(user.get("profile_details").get("interests").get("values")),
+                image_url_original=user.get("user_photos")[0].get("user_photo").get("original_image_url"),
                 # open_answers=[],
             )
 
             target_profile = TargetProfile(
-                user_id=user["token"],
-                gender=user.get("seeking", None),
-                max_age=user.get("looking_for_details").get("age").get("top", None),
-                min_age=user.get("looking_for_details").get("age").get("bottom", None),
-                height=user.get("looking_for_details").get("height").get("text", None), # why not set a max and min like for age?
-                # location=user.get("looking_for_details").get("location").get("importance").get("text", None),
-                # language=user.get("looking_for_details").get("language").get("importance").get("text", None),
-                education=user.get("looking_for_details").get("education").get("importance", None),   #nested dict problem
-                # income=user.get("looking_for_details").get("income").get("importance").get("text", None),   #nested dict problem
-                # occupation=user.get("looking_for_details").get("occupation").get("importance").get("text", None),  #nested dict problem
-                # marital_status=user.get("looking_for_details").get("marital_status"),
-                # ethnicity=user.get("looking_for_details").get("ethnicity"),
-                # body_type=user.get("looking_for_details").get("body_type"),
-                # birth_country=user.get("looking_for_details").get("birth_country").get("importance").get("text", None),#nested dict problem
-                # has_children=user.get("looking_for_details").get("has_children").get("importance").get("text", None),#nested dict problem
-                # immigration=user.get("looking_for_details").get("immigration").get("importance").get("text", None),   #nested dict problem
-                # religion=user.get("looking_for_details").get("religion").get("importance").get("text", None),    #nested dict problem
-                # smoking=user.get("looking_for_details").get("smoking"),
-                # drinking=user.get("looking_for_details").get("drinking"),
+                user_id=user.get("token"), # MUST
+                gender=user.get("seeking"), #MUST
+                max_age=user.get("looking_for_details").get("age").get("top"), #MUST
+                min_age=user.get("looking_for_details").get("age").get("bottom"),   #MUST
+                height=user.get("looking_for_details").get("height").get("text"), #MUST
+                location=user.get("looking_for_details").get("location").get("values"), #NO INFO
+                language=multi_option(user.get("looking_for_details").get("languages").get("values")), #Multi or No preference
+                education=multi_option(user.get("looking_for_details").get("education").get("values")),   #Lable only or contains a value
+                income=multi_option(user.get("looking_for_details").get("income").get("values")), #Multi or No preference
+                occupation=multi_option(user.get("looking_for_details").get("occupation").get("values")),  #Multi or No preference
+                marital_status=multi_option(user.get("looking_for_details").get("marital_status").get("values")), #Multi or No preference
+                ethnicity=multi_option(user.get("looking_for_details").get("ethnicity").get("values")), #Multi or No preference
+                body_type=multi_option(user.get("looking_for_details").get("body_type").get("values")), #Multi or No preference
+                birth_country=user.get("looking_for_details").get("birth_country").get("values"), #NO INFO
+                has_children=multi_option(user.get("looking_for_details").get("has_children").get("values")), #Multi or No preference
+                immigration=multi_option(user.get("looking_for_details").get("immigration").get("values")),   #Multi or No preference
+                religion=multi_option(user.get("looking_for_details").get("religion").get("values")),    #Multi or No preference
+                smoking=multi_option(user.get("looking_for_details").get("smoking").get("values")), #Multi or No preference
+                drinking=multi_option(user.get("looking_for_details").get("drinking").get("values")), #Multi or No preference
             )
 
-            num_open_answer = len(user["open_answers"])
+            open_answer = user.get("open_answers")
             open_answers = []
-            if num_open_answer:
-                for idx in range(num_open_answer):
+            if open_answer:
+                for idx in range(len(open_answer)):
                     open_answers.append(
                         OpenAnswer(
-                            user_id = user["open_answers"][idx]["open_answer"]["open_question"]["id"],
-                            question_id = user["open_answers"][idx]["open_answer"]["open_question"]["description"],
-                            answer_text = user["open_answers"][idx]["open_answer"]["answer"]
+                            user_id = user.get("token"),
+                            question_id = open_answer[idx].get("open_answer").get("open_question").get("description"),
+                            answer_text = open_answer[idx].get("open_answer").get("answer")
                         )
                     )
-            # else:
-            #     open_answers = None
-
             return {"user_profile": user_profile, "target_profile": target_profile, "open_answers": open_answers}
 
         elif response.status_code == 404:
-            if response_json['code'] == 'record_not_found':
+            if response_json.get('code') == 'record_not_found':
                 try:
                     self.authenticate()
                 except Exception as err:
