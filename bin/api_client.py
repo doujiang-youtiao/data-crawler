@@ -1,8 +1,9 @@
-import requests
 import logging
-from domain import UserProfile
-from domain import TargetProfile
+import requests
 from domain import OpenAnswer
+from domain import TargetProfile
+from domain import UserProfile
+
 # import json
 
 class ApiClient:
@@ -16,12 +17,13 @@ class ApiClient:
 
     def __init__(self, account):
         self.api_account = account
+        self.logger = logging.Logger(name='ApiClient', level=logging.INFO)
 
     def authenticate(self):
         username = self.api_account.username
         password = self.api_account.password
 
-        request_url = ApiClient.urls['base'] + ApiClient.urls['auth']
+        request_url = ApiClient.urls.get('base') + ApiClient.urls.get('auth')
         request_headers = {
             'cache-control': 'no-cache',
             'content-type': 'multipart/form-data',
@@ -38,6 +40,7 @@ class ApiClient:
         }
 
         response = requests.post(url=request_url, headers=request_headers, data=request_payload)
+        response_json = response.json()
 
         if response.status_code == 200:
             logging.info('Authentication succeeded on account[%s]', username)
@@ -47,10 +50,10 @@ class ApiClient:
             logging.error(response.json()['message'])
             self.__invalidate_account()
         else:
-            return
+            raise Exception('Unknown error - status: {}\tmessage: {}'.format(response.status_code, response_json))
 
     def get_user_list(self, n_per_page=20, use_advanced=1, page=None, pagination_token=None, cookies=''):
-        request_url = ApiClient.urls['base'] + ApiClient.urls['users']
+        request_url = ApiClient.urls.get('base') + ApiClient.urls.get('users')
         request_headers = {
             'accept': 'application/json, text/plain, */*',
             'cache-control': 'no-cache',
@@ -73,12 +76,12 @@ class ApiClient:
 
         if response.status_code == 200:
             user_list = []
-            for user in response_json['users']:
-                user_list.append(user['user']['token'])
-            self.__update_pagination(current_page=response_json['next_page'], token=response_json['pagination_token'])
+            for user in response_json.get('users'):
+                user_list.append(user.get('user').get('token'))
+            self.__update_pagination(current_page=response_json.get('next_page'), token=response_json.get('pagination_token'))
             return user_list
         elif response.status_code == 400:
-            if response_json['code'] == 'login_required':
+            if response_json.get('code') == 'login_required':
                 try:
                     self.authenticate()
                 except Exception as err:
@@ -87,12 +90,12 @@ class ApiClient:
                     return self.get_user_list(n_per_page=n_per_page, use_advanced=use_advanced, page=page,
                                               pagination_token=pagination_token, cookies=self.api_account.cookies)
             else:
-                logging.error('Unknown error - status: %s\tmessage: %s', response.status_code, response_json)
+                raise Exception('Unknown error - status: {}\tmessage: {}'.format(response.status_code, response_json))
         else:
-            logging.error('Unknown error - status: %s\tmessage: %s', response.status_code, response_json)
+            raise Exception('Unknown error - status: {}\tmessage: {}'.format(response.status_code, response_json))
 
     def get_user(self, user_token, show_simple_options=False, show_natural=True, real_time_info=True, cookies=''):
-        request_url = (ApiClient.urls['base'] + ApiClient.urls['user']).format(user_token)
+        request_url = (ApiClient.urls.get('base') + ApiClient.urls.get('user')).format(user_token)
         request_headers = {
             'accept': 'application/json, text/plain, */*',
             'cache-control': 'no-cache',
@@ -205,8 +208,7 @@ class ApiClient:
             else:
                 logging.error('Unknown error - status: %s\tmessage: %s', response.status_code, response_json)
         else:
-            logging.error('Unknown error - status: %s\tmessage: %s', response.status_code, response_json)
-
+            raise Exception('Unknown error - status: {}\tmessage: {}'.format(response.status_code, response_json))
 
     def __update_pagination(self, current_page, token):
         self.api_account.pagination['current_page'] = current_page
@@ -214,7 +216,7 @@ class ApiClient:
 
     def __persist_cookie(self, cookies):
         dict_cookies = cookies.get_dict()
-        if dict_cookies.__contains__('AWSALB') and dict_cookies.__contains__('user_credentials'):
+        if 'AWSALB' in dict_cookies.keys() and 'user_credentials' in dict_cookies.keys():
             self.api_account.cookies['AWSALB'] = dict_cookies.get('AWSALB')
             self.api_account.cookies['user_credentials'] = dict_cookies.get('user_credentials')
             logging.info('User[%s]\'s cookies have been refreshed.', self.api_account.username)
