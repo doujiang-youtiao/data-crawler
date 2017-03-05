@@ -1,4 +1,5 @@
 import logging
+import threading
 import requests
 from domain import OpenAnswer
 from domain import TargetProfile
@@ -6,6 +7,8 @@ from domain import UserProfile
 
 
 class ApiClient:
+
+    logger = logging.getLogger(name=__name__)
 
     urls = {
         'base': 'https://www.2redbeans.com',
@@ -16,7 +19,7 @@ class ApiClient:
 
     def __init__(self, account):
         self.api_account = account
-        self.logger = logging.Logger(name='ApiClient', level=logging.INFO)
+        self.lock = threading.RLock()
 
     def authenticate(self):
         username = self.api_account.username
@@ -42,11 +45,11 @@ class ApiClient:
         response_json = response.json()
 
         if response.status_code == 200:
-            logging.info('Authentication succeeded on account[%s]', username)
+            self.logger.info('Authentication succeeded on account[%s]', username)
             self.__persist_cookie(cookies=response.cookies)
         elif response.status_code == 400:
-            logging.error('Authentication failed on account[%s]', username)
-            logging.error(response.json()['message'])
+            self.logger.error('Authentication failed on account[%s]', username)
+            self.logger.error(response.json()['message'])
             self.__invalidate_account()
         else:
             raise Exception('Unknown error - status: {}\tmessage: {}'.format(response.status_code, response_json))
@@ -84,7 +87,7 @@ class ApiClient:
                 try:
                     self.authenticate()
                 except Exception as err:
-                    logging.error(err)
+                    self.logger.error(err)
                 else:
                     return self.get_user_list(n_per_page=n_per_page, use_advanced=use_advanced, page=page,
                                               pagination_token=pagination_token, cookies=self.api_account.cookies)
@@ -115,118 +118,109 @@ class ApiClient:
         response_json = response.json()
 
         if response.status_code == 200:
-            # ========================================added code below==========================================#
-            user = response_json["user"]
+            user = response_json.get('user')
 
-            language_id_list = self.__savelist(user.get("profile details"), "languages")
-            interest_id_list = self.__savelist(user.get("profile details"), "interests")
+            language_id_list = self.__to_simple_list(dictionary=user.get('profile_details', {}).get('languages'),
+                                                     list_key='values',
+                                                     value_key='value')
+            interest_id_list = self.__to_simple_list(dictionary=user.get('profile_details', {}).get('interests'),
+                                                     list_key='values',
+                                                     value_key='value')
 
             user_profile = UserProfile(
-                user_id = user["token"],
-                gender = user["sex"],
-                birthday_epoch = user["birthday"],
-                # zodiac = user["profile_details"]["zodiac"]["value"],
-                zodiac = user["profile_details"]["zodiac"],
-                # chinese_zodiac = user["profile_details"]["cn_zodiac"]["value"],
-                chinese_zodiac = user["profile_details"]["cn_zodiac"],
-                # height = user["profile_details"]["height"]["value"], # may not have text. value only??
-                location = user["location_short_description"],
-                city = user["city"],
-                state = user["state"],
-                country = user["country"],
-                # language = user["profile_details"]["languages"]["values"]["value"], #May contain one or more value, considering changing this to a list?
-                #language = user["profile_details"]["languages"],
+                user_id=user.get('token'),
+                gender=user.get('sex'),
+                birthday_epoch=user.get('birthday'),
+                # zodiac=user.get('profile_details').get('zodiac').get('value'),
+                zodiac=user.get('profile_details').get('zodiac'),
+                # chinese_zodiac=user.get('profile_details').get('cn_zodiac').get('value'),
+                chinese_zodiac=user.get('profile_details').get('cn_zodiac'),
+                # height=user.get('profile_details').get('height').get('value'), # may not have text. value only??
+                location=user.get('location_short_description'),
+                city=user.get('city'),
+                state=user.get('state'),
+                country=user.get('country'),
+                # language=user.get('profile_details').get('languages').get('values').get('value'), #May contain one or more value, considering changing this to a list?
+                #language=user.get('profile_details').get('languages'),
                 language=language_id_list,
-                # education = user["profile_details"]["education"]["value"],
-                education = user["profile_details"]["education"],
-                # college = user["profile_details"]["college"]["value"],
-                college = user["profile_details"]["college"],
-                # graduate_school = user["profile_details"]["grad_school"]["value"],
-                 graduate_school = user["profile_details"]["grad_school"],
-                # income = user["profile_details"]["income"]["value"],
-                income = user["profile_details"]["income"],
-                # company = user["profile_details"]["company"]["value"], # May not have a value or text
-                company = user["profile_details"]["company"],
-                # occupation = user["profile_details"]["occupation"]["value"],
-                occupation = user["profile_details"]["occupation"],
-                # job_title = user["profile_details"]["job_title"]["label"], # May not have a value or text
-                job_title = user["profile_details"]["job_title"],
-                # marital_status = user["profile_details"]["marital_status"]["value"],
-                marital_status = user["profile_details"]["marital_status"],
-                # ethnicity = user["profile_details"]["ethnicity"]["value"],
-                ethnicity = user["profile_details"]["ethnicity"],
-                # body_type = user["profile_details"]["body_type"]["value"],
-                body_type = user["profile_details"]["body_type"],
-                # birth_country = user["profile_details"]["birth_country"]["value"],
-                birth_country = user["profile_details"]["birth_country"],
-                # has_children = user["profile_details"]["has_children"]["value"],
-                has_children = user["profile_details"]["has_children"],
-                # will_relocate = user["profile_details"]["willing_to_relocate"]["value"],
-                will_relocate = user["profile_details"]["willing_to_relocate"],
-                # immigration = user["profile_details"]["immigration"]["value"],
-                immigration = user["profile_details"]["immigration"],
-                # first_arrive = user["profile_details"]["first_arrive"]["value"],
-                first_arrive = user["profile_details"]["first_arrive"],
-                # religion = user["profile_details"]["religion"]["value"],
-                religion = user["profile_details"]["religion"],
-                # smoking = user["profile_details"]["smoking"]["value"],
-                smoking = user["profile_details"]["smoking"],
-                #drinking = user["profile_details"]["drinking"]["value"],
-                drinking = user["profile_details"]["drinking"],
-                # interest = user["profile_details"]["interests"]["values"],#May contain one or more value, considering changing this to a list?
-                #interest = user["profile_details"]["interests"],
+                # education=user.get('profile_details').get('education').get('value'),
+                education=user.get('profile_details').get('education'),
+                # college=user.get('profile_details').get('college').get('value'),
+                college=user.get('profile_details').get('college'),
+                # graduate_school=user.get('profile_details').get('grad_school').get('value'),
+                graduate_school=user.get('profile_details').get('grad_school'),
+                # income=user.get('profile_details').get('income').get('value'),
+                income=user.get('profile_details').get('income'),
+                # company=user.get('profile_details').get('company').get('value'), # May not have a value or text
+                company=user.get('profile_details').get('company'),
+                # occupation=user.get('profile_details').get('occupation').get('value'),
+                occupation=user.get('profile_details').get('occupation'),
+                # job_title=user.get('profile_details').get('job_title').get('label'), # May not have a value or text
+                job_title=user.get('profile_details').get('job_title'),
+                # marital_status=user.get('profile_details').get('marital_status').get('value'),
+                marital_status=user.get('profile_details').get('marital_status'),
+                # ethnicity=user.get('profile_details').get('ethnicity').get('value'),
+                ethnicity=user.get('profile_details').get('ethnicity'),
+                # body_type=user.get('profile_details').get('body_type').get('value'),
+                body_type=user.get('profile_details').get('body_type'),
+                # birth_country=user.get('profile_details').get('birth_country').get('value'),
+                birth_country=user.get('profile_details').get('birth_country'),
+                # has_children=user.get('profile_details').get('has_children').get('value'),
+                has_children=user.get('profile_details').get('has_children'),
+                # will_relocate=user.get('profile_details').get('willing_to_relocate').get('value'),
+                will_relocate=user.get('profile_details').get('willing_to_relocate'),
+                # immigration=user.get('profile_details').get('immigration').get('value'),
+                immigration=user.get('profile_details').get('immigration'),
+                # first_arrive=user.get('profile_details').get('first_arrive').get('value'),
+                first_arrive=user.get('profile_details').get('first_arrive'),
+                # religion=user.get('profile_details').get('religion').get('value'),
+                religion=user.get('profile_details').get('religion'),
+                # smoking=user.get('profile_details').get('smoking').get('value'),
+                smoking=user.get('profile_details').get('smoking'),
+                #drinking=user.get('profile_details').get('drinking').get('value'),
+                drinking=user.get('profile_details').get('drinking'),
+                # interest=user.get('profile_details').get('interests').get('values'),#May contain one or more value, considering changing this to a list?
+                #interest=user.get('profile_details').get('interests'),
                 interest=interest_id_list,
-                image_url_original = user["user_photos"][0]["user_photo"]["original_image_url"]
-                # open_answers = user["open_answers"],
+                image_url_original=user.get('user_photos')[0].get('user_photo').get('original_image_url')
+                # open_answers=user.get('open_answers'),
             )
 
             target_profile = TargetProfile(
-                user_id = user["token"],
-                gender = user["seeking"]
-                # max_age = user["looking_for_details"]["age"]["top"],
-                # min_age = user["looking_for_details"]["age"]["bottom"],
-                # height = user["looking_for_details"]["height"]["text"],     # may contain max and min req. as well like age.
-                # location = user["looking_for_details"]["location"]["importance"]["value"],
-                # language = user["looking_for_details"]["location"]["importance"]["value"],
-                # education = user["looking_for_details"]["education"], # may not contain any value
-                # income = user["looking_for_details"]["income"]["importance"]["value"],
-                # occupation = user["looking_for_details"]["occupation"]["importance"]["value"],
-                # marital_status = user["looking_for_details"]["marital_status"]["values"][0]["text"],
-                # ethnicity = user["looking_for_details"]["ethnicity"]["values"][0]["text"],
-                # body_type = user["looking_for_details"]["body_type"],    # May contain one or more value, considering changing this to a list?
-                # birth_country = user["looking_for_details"]["birth_country"]["importance"]["value"],
-                # has_children = user["looking_for_details"]["has_children"], # # May not have a value or text
-                # immigration = user["looking_for_details"]["immigration"]["importance"]["value"],
-                # religion = user["looking_for_details"]["religion"]["importance"]["value"],
-                # smoking = user["looking_for_details"]["smoking"]["values"][0]["value"],
-                # drinking = user["looking_for_details"]["drinking"]["values"][0]["value"],
+                user_id=user.get('token'),
+                gender=user.get('seeking')
+                # max_age=user.get('looking_for_details')('age')('top'),
+                # min_age=user.get('looking_for_details')('age')('bottom'),
+                # height=user.get('looking_for_details')('height')('text'),     # may contain max and min req. as well like age.
+                # location=user.get('looking_for_details')('location')('importance')('value'),
+                # language=user.get('looking_for_details')('location')('importance')('value'),
+                # education=user.get('looking_for_details')('education'), # may not contain any value
+                # income=user.get('looking_for_details')('income')('importance')('value'),
+                # occupation=user.get('looking_for_details')('occupation')('importance')('value'),
+                # marital_status=user.get('looking_for_details')('marital_status')('values')[0]('text'),
+                # ethnicity=user.get('looking_for_details')('ethnicity')('values')[0]('text'),
+                # body_type=user.get('looking_for_details')('body_type'),    # May contain one or more value, considering changing this to a list?
+                # birth_country=user.get('looking_for_details')('birth_country')('importance')('value'),
+                # has_children=user.get('looking_for_details')('has_children'), # # May not have a value or text
+                # immigration=user.get('looking_for_details')('immigration')('importance')('value'),
+                # religion=user.get('looking_for_details')('religion')('importance')('value'),
+                # smoking=user.get('looking_for_details')('smoking')('values')[0]('value'),
+                # drinking=user.get('looking_for_details')('drinking')('values')[0]('value'),
             )
 
-            num_open_answer = len(user["open_answers"])
-            id_list = []
-            question_list = []
-            answer_list = []
-            if num_open_answer != 0:
-                for idx in range(num_open_answer):
-                    id_list.append(user["open_answers"][idx]["open_answer"]["open_question"]["id"])
-                    question_list.append(user["open_answers"][idx]["open_answer"]["open_question"]["description"])
-                    answer_list.append(user["open_answers"][idx]["open_answer"]["answer"])
-            # else:
+            open_answers = []
+            for item in user.get('open_answers', []):
+                open_answer = OpenAnswer(user_id=user.get('token'),
+                                         question_id=item.get('open_answer', {}).get('open_question', {}).get('id'),
+                                         answer_text=item.get('open_answer', {}).get('answer'))
+                open_answers.append(open_answer)
 
-            open_answers = OpenAnswer(
-                user_id = user["token"],
-                question_id = id_list,
-                answer_text = answer_list,
-                # question_text = question_list            # consider adding "open questions" into the class def?
-            )
             return {"user_profile": user_profile, "target_profile": target_profile, "open_answers": open_answers}
-            # ========================================added code below==========================================#
-
         elif response.status_code == 404:
             try:
                 self.authenticate()
             except Exception as err:
-                logging.error(err)
+                self.logger.error(err)
             else:
                 return self.get_user(user_token=user_token, show_simple_options=show_simple_options,
                                      show_natural=show_natural, real_time_info=real_time_info,
@@ -234,26 +228,40 @@ class ApiClient:
         else:
             raise Exception('Unknown error - status: {}\tmessage: {}'.format(response.status_code, response_json))
 
+    def get_user_thread(self, queue, user_token, show_simple_options=False, show_natural=True, real_time_info=True,
+                        cookies=''):
+        queue.put(self.get_user(user_token=user_token,
+                                show_simple_options=show_simple_options,
+                                show_natural=show_natural,
+                                real_time_info=real_time_info,
+                                cookies=cookies))
+
     def __update_pagination(self, current_page, token):
-        self.api_account.pagination['current_page'] = current_page
-        self.api_account.pagination['token'] = token
+        with self.lock:
+            self.api_account.pagination['current_page'] = current_page
+            self.api_account.pagination['token'] = token
 
     def __persist_cookie(self, cookies):
-        dict_cookies = cookies.get_dict()
-        if 'AWSALB' in dict_cookies.keys() and 'user_credentials' in dict_cookies.keys():
-            self.api_account.cookies['AWSALB'] = dict_cookies.get('AWSALB')
-            self.api_account.cookies['user_credentials'] = dict_cookies.get('user_credentials')
-            logging.info('User[%s]\'s cookies have been refreshed.', self.api_account.username)
-        else:
-            logging.warning('Response cookies do not have sufficient authentication attributes.')
+        with self.lock:
+            dict_cookies = cookies.get_dict()
+            if 'AWSALB' in dict_cookies.keys() and 'user_credentials' in dict_cookies.keys():
+                self.api_account.cookies['AWSALB'] = dict_cookies.get('AWSALB')
+                self.api_account.cookies['user_credentials'] = dict_cookies.get('user_credentials')
+                self.logger.info('User[%s]\'s cookies have been refreshed.', self.api_account.username)
+            else:
+                self.logger.warning('Response cookies do not have sufficient authentication attributes.')
 
     def __invalidate_account(self):
-        self.api_account.valid = False
-        raise Exception('Invalid api account[{}]'.format(self.api_account.username))
+        with self.lock:
+            self.api_account.valid = False
+            raise Exception('Invalid api account[{}]'.format(self.api_account.username))
 
-    def __savelist(self, address, parameter):
-        id_list = []
-        if address.get(parameter).get('values'):
-            for item in address.get(parameter).get('values'):
-                id_list.append(item.get('value'))
-        return id_list
+    @staticmethod
+    def __to_simple_list(dictionary, list_key, value_key):
+        simple_list = []
+        if dictionary:
+            complex_list = dictionary.get(list_key)
+            if complex_list:
+                for items in complex_list:
+                    simple_list.append(items.get(value_key))
+        return simple_list

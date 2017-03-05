@@ -1,9 +1,9 @@
 from configparser import ConfigParser
 import pymysql as ds
-# import mysql.connector as ds
 
 config = ConfigParser()
 config.read('config.cfg')
+
 
 class DataSource:
 
@@ -147,9 +147,3 @@ class OpenAnswerRepository:
             connection.commit()
             cursor.close()
             connection.close()
-
-
-list = [('chen', 1, 'answer1'),('chen', 2, 'answer2'),('chao', 1, 'answer1')]
-openanswer = OpenAnswerRepository()
-# openanswer.answer_exists()
-openanswer.bulk_insert_open_answer(list)
