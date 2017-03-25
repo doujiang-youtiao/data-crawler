@@ -120,10 +120,10 @@ class ApiClient:
         if response.status_code == 200:
             user = response_json.get('user')
 
-            language_id_list = self.__to_simple_list(dictionary=user.get('profile_details', {}).get('languages'),
+            up_language_id_list = self.__to_simple_list(dictionary=user.get('profile_details', {}).get('languages'),
                                                      list_key='values',
                                                      value_key='value')
-            interest_id_list = self.__to_simple_list(dictionary=user.get('profile_details', {}).get('interests'),
+            up_interest_id_list = self.__to_simple_list(dictionary=user.get('profile_details', {}).get('interests'),
                                                      list_key='values',
                                                      value_key='value')
 
@@ -131,115 +131,98 @@ class ApiClient:
                 user_id=user.get('token'),
                 gender=user.get('sex'),
                 birthday_epoch=user.get('birthday'),
-                # zodiac=user.get('profile_details').get('zodiac').get('value'),
-                zodiac=user.get('profile_details').get('zodiac'),
-                # chinese_zodiac=user.get('profile_details').get('cn_zodiac').get('value'),
-                chinese_zodiac=user.get('profile_details').get('cn_zodiac'),
-                # height=user.get('profile_details').get('height').get('value'), # may not have text. value only??
+                zodiac=user.get('profile_details', {}).get('zodiac', {}).get('text'),
+                chinese_zodiac=user.get('profile_details', {}).get('cn_zodiac', {}).get('text'),
+                height=user.get('profile_details', {}).get('height', {}).get('text'), # may not contain text by value
                 location=user.get('location_short_description'),
                 city=user.get('city'),
                 state=user.get('state'),
                 country=user.get('country'),
-                # language=user.get('profile_details').get('languages').get('values').get('value'), #May contain one or more value, considering changing this to a list?
-                #language=user.get('profile_details').get('languages'),
-                language=language_id_list,
-                # education=user.get('profile_details').get('education').get('value'),
-                education=user.get('profile_details').get('education'),
-                # college=user.get('profile_details').get('college').get('value'),
-                college=user.get('profile_details').get('college'),
-                # graduate_school=user.get('profile_details').get('grad_school').get('value'),
-                graduate_school=user.get('profile_details').get('grad_school'),
-                # income=user.get('profile_details').get('income').get('value'),
-                income=user.get('profile_details').get('income'),
-                # company=user.get('profile_details').get('company').get('value'), # May not have a value or text
-                company=user.get('profile_details').get('company'),
-                # occupation=user.get('profile_details').get('occupation').get('value'),
-                occupation=user.get('profile_details').get('occupation'),
-                # job_title=user.get('profile_details').get('job_title').get('label'), # May not have a value or text
-                job_title=user.get('profile_details').get('job_title'),
-                # marital_status=user.get('profile_details').get('marital_status').get('value'),
-                marital_status=user.get('profile_details').get('marital_status'),
-                # ethnicity=user.get('profile_details').get('ethnicity').get('value'),
-                ethnicity=user.get('profile_details').get('ethnicity'),
-                # body_type=user.get('profile_details').get('body_type').get('value'),
-                body_type=user.get('profile_details').get('body_type'),
-                # birth_country=user.get('profile_details').get('birth_country').get('value'),
-                birth_country=user.get('profile_details').get('birth_country'),
-                # has_children=user.get('profile_details').get('has_children').get('value'),
-                has_children=user.get('profile_details').get('has_children'),
-                # will_relocate=user.get('profile_details').get('willing_to_relocate').get('value'),
-                will_relocate=user.get('profile_details').get('willing_to_relocate'),
-                # immigration=user.get('profile_details').get('immigration').get('value'),
-                immigration=user.get('profile_details').get('immigration'),
-                # first_arrive=user.get('profile_details').get('first_arrive').get('value'),
-                first_arrive=user.get('profile_details').get('first_arrive'),
-                # religion=user.get('profile_details').get('religion').get('value'),
-                religion=user.get('profile_details').get('religion'),
-                # smoking=user.get('profile_details').get('smoking').get('value'),
-                smoking=user.get('profile_details').get('smoking'),
-                #drinking=user.get('profile_details').get('drinking').get('value'),
-                drinking=user.get('profile_details').get('drinking'),
-                # interest=user.get('profile_details').get('interests').get('values'),#May contain one or more value, considering changing this to a list?
-                #interest=user.get('profile_details').get('interests'),
-                interest=interest_id_list,
-                image_url_original=user.get('user_photos')[0].get('user_photo').get('original_image_url')
-                # open_answers=user.get('open_answers'),
+                language=up_language_id_list,
+                education=user.get('profile_details', {}).get('education', {}).get('text'),
+                college=user.get('profile_details', {}).get('college', {}).get('text'),
+                graduate_school=user.get('profile_details', {}).get('grad_school', {}).get('text'),
+                income=user.get('profile_details', {}).get('income', {}).get('text'),
+                company=user.get('profile_details', {}).get('company', {}).get('text'),
+                occupation=user.get('profile_details',{}).get('occupation',{}).get('text'),
+                job_title=user.get('profile_details', {}).get('job_title', {}).get('text'),
+                marital_status=user.get('profile_details', {}).get('marital_status', {}).get('text'),
+                ethnicity=user.get('profile_details', {}).get('ethnicity', {}).get('text'),
+                body_type=user.get('profile_details', {}).get('body_type', {}).get('text'),
+                birth_country=user.get('profile_details', {}).get('birth_country', {}).get('text'),
+                has_children=user.get('profile_details', {}).get('has_children', {}).get('text'),
+                will_relocate=user.get('profile_details', {}).get('willing_to_relocate', {}).get('text'),
+                immigration=user.get('profile_details', {}).get('immigration', {}).get('text'),
+                first_arrive=user.get('profile_details', {}).get('first_arrive', {}).get('text'),
+                religion=user.get('profile_details', {}).get('religion', {}).get('text'),
+                smoking=user.get('profile_details', {}).get('smoking', {}).get('text'),
+                drinking=user.get('profile_details', {}).get('drinking', {}).get('text'),
+                interest=up_interest_id_list,
+              ##  image_url_original=user.get('user_photos')[0].get('user_photo', {}).get('original_image_url'),##
+                open_answers=[],
+             )
 
+            tp_language_id_list = self.__to_simple_list(dictionary=user.get('looking_for_details', {}).get('language'),
+                                                        list_key='values',
+                                                        value_key='value')
+            tp_education_id_list = self.__to_simple_list(dictionary=user.get('looking_for_details').get('education'),
+                                                         list_key='values',
+                                                         value_key='value')
+            tp_income_id_list = self.__to_simple_list(dictionary=user.get('looking_for_details').get('income'),
+                                                         list_key='values',
+                                                         value_key='value')
+            tp_occupation_id_list = self.__to_simple_list(dictionary=user.get('looking_for_details').get('occupation'),
+                                                         list_key='values',
+                                                         value_key='value')
+            tp_marital_status_id_list = self.__to_simple_list(dictionary=user.get('looking_for_details').get('marital_status'),
+                                                         list_key='values',
+                                                         value_key='value')
+            tp_ethnicity_id_list = self.__to_simple_list(dictionary=user.get('looking_for_details').get('ethnicity'),
+                                                         list_key='values',
+                                                         value_key='value')
+            tp_body_type_id_list = self.__to_simple_list(dictionary=user.get('looking_for_details').get('body_type'),
+                                                         list_key='values',
+                                                         value_key='value')
+            tp_birth_country_id_list = self.__to_simple_list(dictionary=user.get('looking_for_details').get('birth_country'),
+                                                         list_key='values',
+                                                         value_key='value')
+            tp_has_children_id_list = self.__to_simple_list(dictionary=user.get('looking_for_details').get('has_children'),
+                                                         list_key='values',
+                                                         value_key='value')
+            tp_immigration_id_list = self.__to_simple_list(dictionary=user.get('looking_for_details').get('immigration'),
+                                                         list_key='values',
+                                                         value_key='value')
+            tp_religion_id_list = self.__to_simple_list(dictionary=user.get('looking_for_details').get('religion'),
+                                                         list_key='values',
+                                                         value_key='value')
+            tp_smoking_id_list = self.__to_simple_list(dictionary=user.get('looking_for_details').get('smoking'),
+                                                         list_key='values',
+                                                         value_key='value')
+            tp_drinking_id_list = self.__to_simple_list(dictionary=user.get('looking_for_details').get('drinking'),
+                                                         list_key='values',
+                                                         value_key='value')
 
-                # user_id=user.get("token"),
-                # gender=user.get("sex"),
-                # birthday_epoch=user.get("birthday"),
-                # zodiac=user.get("profile_details").get("zodiac").get("text"),
-                # chinese_zodiac=user.get("profile_details").get("cn_zodiac").get("text"),
-                # height=user.get("profile_details").get("height").get("text"),
-                # location=user.get("location_short_description"),
-                # city=user.get("city"),
-                # state=user.get("state"),
-                # country=user.get("country"),
-                # language=multi_option(user.get("profile_details").get("languages").get("values")),
-                # education=user.get("profile_details").get("education").get("text"),
-                # college=user.get("profile_details").get("college").get("text"),
-                # graduate_school=user.get("profile_details").get("grad_school").get("text"),
-                # income=user.get("profile_details").get("income").get("text"),
-                # company=user.get("profile_details").get("company").get("text"),
-                # occupation=user.get("profile_details").get("occupation").get("text"),
-                # job_title=user.get("profile_details").get("job_title").get("text"),
-                # marital_status=user.get("profile_details").get("marital_status").get("text"),
-                # ethnicity=user.get("profile_details").get("ethnicity").get("text"),
-                # body_type=user.get("profile_details").get("body_type").get("text"),
-                # birth_country=user.get("profile_details").get("birth_country").get("text"),
-                # has_children=user.get("profile_details").get("has_children").get("text"),
-                # will_relocate=user.get("profile_details").get("willing_to_relocate").get("text"),
-                # immigration=user.get("profile_details").get("immigration").get("text"),
-                # first_arrive=user.get("profile_details").get("first_arrive").get("text"),
-                # religion=user.get("profile_details").get("religion").get("text"),
-                # smoking=user.get("profile_details").get("smoking").get("text"),
-                # drinking=user.get("profile_details").get("drinking").get("text"),
-                # interest=multi_option(user.get("profile_details").get("interests").get("values")),
-                # image_url_original=user.get("user_photos")[0].get("user_photo").get("original_image_url"),
-                # # open_answers=[],
-            )
 
             target_profile = TargetProfile(
-                user_id=user.get("token"), # MUST
-                gender=user.get("seeking"), #MUST
-                max_age=user.get("looking_for_details").get("age").get("top"), #MUST
-                min_age=user.get("looking_for_details").get("age").get("bottom"),   #MUST
-                height=user.get("looking_for_details").get("height").get("text"), #MUST
-                location=user.get("looking_for_details").get("location").get("values"), #NO INFO
-                # language=multi_option(user.get("looking_for_details").get("languages").get("values")), #Multi or No preference
-                # education=multi_option(user.get("looking_for_details").get("education").get("values")),   #Lable only or contains a value
-                # income=multi_option(user.get("looking_for_details").get("income").get("values")), #Multi or No preference
-                # occupation=multi_option(user.get("looking_for_details").get("occupation").get("values")),  #Multi or No preference
-                # marital_status=multi_option(user.get("looking_for_details").get("marital_status").get("values")), #Multi or No preference
-                # ethnicity=multi_option(user.get("looking_for_details").get("ethnicity").get("values")), #Multi or No preference
-                # body_type=multi_option(user.get("looking_for_details").get("body_type").get("values")), #Multi or No preference
-                # birth_country=user.get("looking_for_details").get("birth_country").get("values"), #NO INFO
-                # has_children=multi_option(user.get("looking_for_details").get("has_children").get("values")), #Multi or No preference
-                # immigration=multi_option(user.get("looking_for_details").get("immigration").get("values")),   #Multi or No preference
-                # religion=multi_option(user.get("looking_for_details").get("religion").get("values")),    #Multi or No preference
-                # smoking=multi_option(user.get("looking_for_details").get("smoking").get("values")), #Multi or No preference
-                # drinking=multi_option(user.get("looking_for_details").get("drinking").get("values")), #Multi or No preference
+                user_id=user.get('token'), # MUST
+                gender=user.get('seeking'), #MUST
+                max_age=user.get('looking_for_details', {}).get('age', {}).get('top'),
+                min_age=user.get('looking_for_details', {}).get('age', {}).get('bottom'),
+                height=user.get('looking_for_details', {}).get('height', {}).get('text'),
+                location=user.get('looking_for_details').get('location', {}).get('values'),
+                language=tp_language_id_list,
+                education=tp_education_id_list,
+                income=tp_income_id_list,
+                occupation=tp_occupation_id_list,
+                marital_status=tp_marital_status_id_list,
+                ethnicity=tp_ethnicity_id_list,
+                body_type=tp_body_type_id_list,
+                birth_country=tp_birth_country_id_list,
+                has_children=tp_has_children_id_list,
+                immigration=tp_immigration_id_list,
+                religion=tp_religion_id_list,
+                smoking=tp_smoking_id_list,
+                drinking=tp_drinking_id_list,
             )
 
             open_answers = []
