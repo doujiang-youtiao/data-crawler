@@ -1,12 +1,14 @@
 import logging
+import threading
 import requests
 from domain import OpenAnswer
 from domain import TargetProfile
 from domain import UserProfile
 
-# import json
 
 class ApiClient:
+
+    logger = logging.getLogger(name=__name__)
 
     urls = {
         'base': 'https://www.2redbeans.com',
@@ -17,7 +19,7 @@ class ApiClient:
 
     def __init__(self, account):
         self.api_account = account
-        self.logger = logging.Logger(name='ApiClient', level=logging.INFO)
+        self.lock = threading.RLock()
 
     def authenticate(self):
         username = self.api_account.username
@@ -43,11 +45,11 @@ class ApiClient:
         response_json = response.json()
 
         if response.status_code == 200:
-            logging.info('Authentication succeeded on account[%s]', username)
+            self.logger.info('Authentication succeeded on account[%s]', username)
             self.__persist_cookie(cookies=response.cookies)
         elif response.status_code == 400:
-            logging.error('Authentication failed on account[%s]', username)
-            logging.error(response.json()['message'])
+            self.logger.error('Authentication failed on account[%s]', username)
+            self.logger.error(response.json()['message'])
             self.__invalidate_account()
         else:
             raise Exception('Unknown error - status: {}\tmessage: {}'.format(response.status_code, response_json))
@@ -85,7 +87,7 @@ class ApiClient:
                 try:
                     self.authenticate()
                 except Exception as err:
-                    logging.error(err)
+                    self.logger.error(err)
                 else:
                     return self.get_user_list(n_per_page=n_per_page, use_advanced=use_advanced, page=page,
                                               pagination_token=pagination_token, cookies=self.api_account.cookies)
@@ -116,52 +118,106 @@ class ApiClient:
         response_json = response.json()
 
         if response.status_code == 200:
-            # ========================================added code below==========================================#
-            # response_json_out = open("response_json.json", "w")
-            # json.dump(response_json, response_json_out)
+            user = response_json.get('user')
 
-            user = response_json.get("user")
-
-            def multi_option(input_values):
-                multi_answer = []
-                if input_values:
-                    for idx in range(len(input_values)):
-                        multi_answer.append(input_values[idx].get("text"))
-                return multi_answer
+            language_id_list = self.__to_simple_list(dictionary=user.get('profile_details', {}).get('languages'),
+                                                     list_key='values',
+                                                     value_key='value')
+            interest_id_list = self.__to_simple_list(dictionary=user.get('profile_details', {}).get('interests'),
+                                                     list_key='values',
+                                                     value_key='value')
 
             user_profile = UserProfile(
-                user_id=user.get("token"),
-                gender=user.get("sex"),
-                birthday_epoch=user.get("birthday"),
-                zodiac=user.get("profile_details").get("zodiac").get("text"),
-                chinese_zodiac=user.get("profile_details").get("cn_zodiac").get("text"),
-                height=user.get("profile_details").get("height").get("text"),
-                location=user.get("location_short_description"),
-                city=user.get("city"),
-                state=user.get("state"),
-                country=user.get("country"),
-                language=multi_option(user.get("profile_details").get("languages").get("values")),
-                education=user.get("profile_details").get("education").get("text"),
-                college=user.get("profile_details").get("college").get("text"),
-                graduate_school=user.get("profile_details").get("grad_school").get("text"),
-                income=user.get("profile_details").get("income").get("text"),
-                company=user.get("profile_details").get("company").get("text"),
-                occupation=user.get("profile_details").get("occupation").get("text"),
-                job_title=user.get("profile_details").get("job_title").get("text"),
-                marital_status=user.get("profile_details").get("marital_status").get("text"),
-                ethnicity=user.get("profile_details").get("ethnicity").get("text"),
-                body_type=user.get("profile_details").get("body_type").get("text"),
-                birth_country=user.get("profile_details").get("birth_country").get("text"),
-                has_children=user.get("profile_details").get("has_children").get("text"),
-                will_relocate=user.get("profile_details").get("willing_to_relocate").get("text"),
-                immigration=user.get("profile_details").get("immigration").get("text"),
-                first_arrive=user.get("profile_details").get("first_arrive").get("text"),
-                religion=user.get("profile_details").get("religion").get("text"),
-                smoking=user.get("profile_details").get("smoking").get("text"),
-                drinking=user.get("profile_details").get("drinking").get("text"),
-                interest=multi_option(user.get("profile_details").get("interests").get("values")),
-                image_url_original=user.get("user_photos")[0].get("user_photo").get("original_image_url"),
-                # open_answers=[],
+                user_id=user.get('token'),
+                gender=user.get('sex'),
+                birthday_epoch=user.get('birthday'),
+                # zodiac=user.get('profile_details').get('zodiac').get('value'),
+                zodiac=user.get('profile_details').get('zodiac'),
+                # chinese_zodiac=user.get('profile_details').get('cn_zodiac').get('value'),
+                chinese_zodiac=user.get('profile_details').get('cn_zodiac'),
+                # height=user.get('profile_details').get('height').get('value'), # may not have text. value only??
+                location=user.get('location_short_description'),
+                city=user.get('city'),
+                state=user.get('state'),
+                country=user.get('country'),
+                # language=user.get('profile_details').get('languages').get('values').get('value'), #May contain one or more value, considering changing this to a list?
+                #language=user.get('profile_details').get('languages'),
+                language=language_id_list,
+                # education=user.get('profile_details').get('education').get('value'),
+                education=user.get('profile_details').get('education'),
+                # college=user.get('profile_details').get('college').get('value'),
+                college=user.get('profile_details').get('college'),
+                # graduate_school=user.get('profile_details').get('grad_school').get('value'),
+                graduate_school=user.get('profile_details').get('grad_school'),
+                # income=user.get('profile_details').get('income').get('value'),
+                income=user.get('profile_details').get('income'),
+                # company=user.get('profile_details').get('company').get('value'), # May not have a value or text
+                company=user.get('profile_details').get('company'),
+                # occupation=user.get('profile_details').get('occupation').get('value'),
+                occupation=user.get('profile_details').get('occupation'),
+                # job_title=user.get('profile_details').get('job_title').get('label'), # May not have a value or text
+                job_title=user.get('profile_details').get('job_title'),
+                # marital_status=user.get('profile_details').get('marital_status').get('value'),
+                marital_status=user.get('profile_details').get('marital_status'),
+                # ethnicity=user.get('profile_details').get('ethnicity').get('value'),
+                ethnicity=user.get('profile_details').get('ethnicity'),
+                # body_type=user.get('profile_details').get('body_type').get('value'),
+                body_type=user.get('profile_details').get('body_type'),
+                # birth_country=user.get('profile_details').get('birth_country').get('value'),
+                birth_country=user.get('profile_details').get('birth_country'),
+                # has_children=user.get('profile_details').get('has_children').get('value'),
+                has_children=user.get('profile_details').get('has_children'),
+                # will_relocate=user.get('profile_details').get('willing_to_relocate').get('value'),
+                will_relocate=user.get('profile_details').get('willing_to_relocate'),
+                # immigration=user.get('profile_details').get('immigration').get('value'),
+                immigration=user.get('profile_details').get('immigration'),
+                # first_arrive=user.get('profile_details').get('first_arrive').get('value'),
+                first_arrive=user.get('profile_details').get('first_arrive'),
+                # religion=user.get('profile_details').get('religion').get('value'),
+                religion=user.get('profile_details').get('religion'),
+                # smoking=user.get('profile_details').get('smoking').get('value'),
+                smoking=user.get('profile_details').get('smoking'),
+                #drinking=user.get('profile_details').get('drinking').get('value'),
+                drinking=user.get('profile_details').get('drinking'),
+                # interest=user.get('profile_details').get('interests').get('values'),#May contain one or more value, considering changing this to a list?
+                #interest=user.get('profile_details').get('interests'),
+                interest=interest_id_list,
+                image_url_original=user.get('user_photos')[0].get('user_photo').get('original_image_url')
+                # open_answers=user.get('open_answers'),
+
+
+                # user_id=user.get("token"),
+                # gender=user.get("sex"),
+                # birthday_epoch=user.get("birthday"),
+                # zodiac=user.get("profile_details").get("zodiac").get("text"),
+                # chinese_zodiac=user.get("profile_details").get("cn_zodiac").get("text"),
+                # height=user.get("profile_details").get("height").get("text"),
+                # location=user.get("location_short_description"),
+                # city=user.get("city"),
+                # state=user.get("state"),
+                # country=user.get("country"),
+                # language=multi_option(user.get("profile_details").get("languages").get("values")),
+                # education=user.get("profile_details").get("education").get("text"),
+                # college=user.get("profile_details").get("college").get("text"),
+                # graduate_school=user.get("profile_details").get("grad_school").get("text"),
+                # income=user.get("profile_details").get("income").get("text"),
+                # company=user.get("profile_details").get("company").get("text"),
+                # occupation=user.get("profile_details").get("occupation").get("text"),
+                # job_title=user.get("profile_details").get("job_title").get("text"),
+                # marital_status=user.get("profile_details").get("marital_status").get("text"),
+                # ethnicity=user.get("profile_details").get("ethnicity").get("text"),
+                # body_type=user.get("profile_details").get("body_type").get("text"),
+                # birth_country=user.get("profile_details").get("birth_country").get("text"),
+                # has_children=user.get("profile_details").get("has_children").get("text"),
+                # will_relocate=user.get("profile_details").get("willing_to_relocate").get("text"),
+                # immigration=user.get("profile_details").get("immigration").get("text"),
+                # first_arrive=user.get("profile_details").get("first_arrive").get("text"),
+                # religion=user.get("profile_details").get("religion").get("text"),
+                # smoking=user.get("profile_details").get("smoking").get("text"),
+                # drinking=user.get("profile_details").get("drinking").get("text"),
+                # interest=multi_option(user.get("profile_details").get("interests").get("values")),
+                # image_url_original=user.get("user_photos")[0].get("user_photo").get("original_image_url"),
+                # # open_answers=[],
             )
 
             target_profile = TargetProfile(
@@ -171,32 +227,28 @@ class ApiClient:
                 min_age=user.get("looking_for_details").get("age").get("bottom"),   #MUST
                 height=user.get("looking_for_details").get("height").get("text"), #MUST
                 location=user.get("looking_for_details").get("location").get("values"), #NO INFO
-                language=multi_option(user.get("looking_for_details").get("languages").get("values")), #Multi or No preference
-                education=multi_option(user.get("looking_for_details").get("education").get("values")),   #Lable only or contains a value
-                income=multi_option(user.get("looking_for_details").get("income").get("values")), #Multi or No preference
-                occupation=multi_option(user.get("looking_for_details").get("occupation").get("values")),  #Multi or No preference
-                marital_status=multi_option(user.get("looking_for_details").get("marital_status").get("values")), #Multi or No preference
-                ethnicity=multi_option(user.get("looking_for_details").get("ethnicity").get("values")), #Multi or No preference
-                body_type=multi_option(user.get("looking_for_details").get("body_type").get("values")), #Multi or No preference
-                birth_country=user.get("looking_for_details").get("birth_country").get("values"), #NO INFO
-                has_children=multi_option(user.get("looking_for_details").get("has_children").get("values")), #Multi or No preference
-                immigration=multi_option(user.get("looking_for_details").get("immigration").get("values")),   #Multi or No preference
-                religion=multi_option(user.get("looking_for_details").get("religion").get("values")),    #Multi or No preference
-                smoking=multi_option(user.get("looking_for_details").get("smoking").get("values")), #Multi or No preference
-                drinking=multi_option(user.get("looking_for_details").get("drinking").get("values")), #Multi or No preference
+                # language=multi_option(user.get("looking_for_details").get("languages").get("values")), #Multi or No preference
+                # education=multi_option(user.get("looking_for_details").get("education").get("values")),   #Lable only or contains a value
+                # income=multi_option(user.get("looking_for_details").get("income").get("values")), #Multi or No preference
+                # occupation=multi_option(user.get("looking_for_details").get("occupation").get("values")),  #Multi or No preference
+                # marital_status=multi_option(user.get("looking_for_details").get("marital_status").get("values")), #Multi or No preference
+                # ethnicity=multi_option(user.get("looking_for_details").get("ethnicity").get("values")), #Multi or No preference
+                # body_type=multi_option(user.get("looking_for_details").get("body_type").get("values")), #Multi or No preference
+                # birth_country=user.get("looking_for_details").get("birth_country").get("values"), #NO INFO
+                # has_children=multi_option(user.get("looking_for_details").get("has_children").get("values")), #Multi or No preference
+                # immigration=multi_option(user.get("looking_for_details").get("immigration").get("values")),   #Multi or No preference
+                # religion=multi_option(user.get("looking_for_details").get("religion").get("values")),    #Multi or No preference
+                # smoking=multi_option(user.get("looking_for_details").get("smoking").get("values")), #Multi or No preference
+                # drinking=multi_option(user.get("looking_for_details").get("drinking").get("values")), #Multi or No preference
             )
 
-            open_answer = user.get("open_answers")
             open_answers = []
-            if open_answer:
-                for idx in range(len(open_answer)):
-                    open_answers.append(
-                        OpenAnswer(
-                            user_id = user.get("token"),
-                            question_id = open_answer[idx].get("open_answer").get("open_question").get("description"),
-                            answer_text = open_answer[idx].get("open_answer").get("answer")
-                        )
-                    )
+            for item in user.get('open_answers', []):
+                open_answer = OpenAnswer(user_id=user.get('token'),
+                                         question_id=item.get('open_answer', {}).get('open_question', {}).get('id'),
+                                         answer_text=item.get('open_answer', {}).get('answer'))
+                open_answers.append(open_answer)
+
             return {"user_profile": user_profile, "target_profile": target_profile, "open_answers": open_answers}
 
         elif response.status_code == 404:
@@ -204,29 +256,50 @@ class ApiClient:
                 try:
                     self.authenticate()
                 except Exception as err:
-                    logging.error(err)
+                    self.logger.error(err)
                 else:
                     return self.get_user(user_token=user_token, show_simple_options=show_simple_options,
                                          show_natural=show_natural, real_time_info=real_time_info,
                                          cookies=self.api_account.cookies)
             else:
-                logging.error('Unknown error - status: %s\tmessage: %s', response.status_code, response_json)
+                raise Exception('Unknown error - status: {}\tmessage: {}'.format(response.status_code, response_json))
         else:
             raise Exception('Unknown error - status: {}\tmessage: {}'.format(response.status_code, response_json))
 
+    def get_user_thread(self, queue, user_token, show_simple_options=False, show_natural=True, real_time_info=True,
+                        cookies=''):
+        queue.put(self.get_user(user_token=user_token,
+                                show_simple_options=show_simple_options,
+                                show_natural=show_natural,
+                                real_time_info=real_time_info,
+                                cookies=cookies))
+
     def __update_pagination(self, current_page, token):
-        self.api_account.pagination['current_page'] = current_page
-        self.api_account.pagination['token'] = token
+        with self.lock:
+            self.api_account.pagination['current_page'] = current_page
+            self.api_account.pagination['token'] = token
 
     def __persist_cookie(self, cookies):
-        dict_cookies = cookies.get_dict()
-        if 'AWSALB' in dict_cookies.keys() and 'user_credentials' in dict_cookies.keys():
-            self.api_account.cookies['AWSALB'] = dict_cookies.get('AWSALB')
-            self.api_account.cookies['user_credentials'] = dict_cookies.get('user_credentials')
-            logging.info('User[%s]\'s cookies have been refreshed.', self.api_account.username)
-        else:
-            logging.warning('Response cookies do not have sufficient authentication attributes.')
+        with self.lock:
+            dict_cookies = cookies.get_dict()
+            if 'AWSALB' in dict_cookies.keys() and 'user_credentials' in dict_cookies.keys():
+                self.api_account.cookies['AWSALB'] = dict_cookies.get('AWSALB')
+                self.api_account.cookies['user_credentials'] = dict_cookies.get('user_credentials')
+                self.logger.info('User[%s]\'s cookies have been refreshed.', self.api_account.username)
+            else:
+                self.logger.warning('Response cookies do not have sufficient authentication attributes.')
 
     def __invalidate_account(self):
-        self.api_account.valid = False
-        raise Exception('Invalid api account[{}]'.format(self.api_account.username))
+        with self.lock:
+            self.api_account.valid = False
+            raise Exception('Invalid api account[{}]'.format(self.api_account.username))
+
+    @staticmethod
+    def __to_simple_list(dictionary, list_key, value_key):
+        simple_list = []
+        if dictionary:
+            complex_list = dictionary.get(list_key)
+            if complex_list:
+                for items in complex_list:
+                    simple_list.append(items.get(value_key))
+        return simple_list
