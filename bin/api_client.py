@@ -126,7 +126,11 @@ class ApiClient:
             up_interest_id_list = self.__to_simple_list(dictionary=user.get('profile_details', {}).get('interests'),
                                                      list_key='values',
                                                      value_key='value')
-
+            if user.get('user_photos'):
+                up_img = user.get('user_photos')[0].get('user_photo', {}).get('original_image_url')
+            else: 
+                up_img = none
+                
             user_profile = UserProfile(
                 user_id=user.get('token'),
                 gender=user.get('sex'),
@@ -158,7 +162,7 @@ class ApiClient:
                 smoking=user.get('profile_details', {}).get('smoking', {}).get('text'),
                 drinking=user.get('profile_details', {}).get('drinking', {}).get('text'),
                 interest=up_interest_id_list,
-              ##  image_url_original=user.get('user_photos')[0].get('user_photo', {}).get('original_image_url'),##
+                image_url_original=up_img,
                 open_answers=[],
              )
 
