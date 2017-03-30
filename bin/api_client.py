@@ -129,7 +129,7 @@ class ApiClient:
             if user.get('user_photos'):
                 up_img = user.get('user_photos')[0].get('user_photo', {}).get('original_image_url')
             else: 
-                up_img = none
+                up_img = None
                 
             user_profile = UserProfile(
                 user_id=user.get('token'),
